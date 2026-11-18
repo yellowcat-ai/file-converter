@@ -158,12 +158,12 @@
         <div class="flex-1 overflow-y-auto p-4">
             <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
                 这个代理把 CloudConvert 和 MinerU 的密钥留在服务端，并帮浏览器绕过 OSS/CDN 的跨域限制。
-                <b>MinerU 精准解析必须配好代理才能用</b>（token 不能放进前端代码，且每 14 天过期一次）。<br>
+                <b>MinerU 精准解析必须配好代理才能用</b>（token 不能放进前端代码，有效期 90 天）。<br>
                 1. 打开 <a href="https://dash.cloudflare.com" target="_blank" class="text-primary-500 underline">Cloudflare Dashboard</a>
                 → Workers &amp; Pages → 创建 Worker；<br>
                 2. 粘贴下面这份代码，在 Settings → Variables 里加两个 Secret：<code class="px-1 rounded bg-gray-100 dark:bg-gray-700">CLOUDCONVERT_API_KEY</code>、<code class="px-1 rounded bg-gray-100 dark:bg-gray-700">MINERU_API_TOKEN</code>，部署；<br>
                 3. 把 Worker 地址填回上方"代理地址"输入框并保存。<br>
-                MinerU token 到 <a href="https://mineru.net/apiManage/token" target="_blank" class="text-primary-500 underline">这里</a>领取，过期后只需更新 Secret，不用重新部署。
+                MinerU token 到 <a href="https://mineru.net/apiManage/token" target="_blank" class="text-primary-500 underline">这里</a>领取，有效期 90 天、不支持续期；到期后重新创建一个并更新 Secret 即可，不用重新部署。
             </p>
             <div class="flex items-center gap-2 mb-2">
                 <button onclick="copyWorkerCode()" class="px-3 py-1.5 bg-primary-500 text-white rounded-lg text-xs font-medium hover:bg-primary-600 transition">
@@ -323,7 +323,7 @@
                 <ul class="space-y-1 text-gray-600 dark:text-gray-400">
                     <li>客户端转换: 无限制，离线可用</li>
                     <li>MinerU 精准解析: 需在 Worker 上配 token，免费 1000 页/天，单文件 ≤200 页</li>
-                    <li>MinerU token 每 14 天过期，过期后更新 Worker Secret 即可</li>
+                    <li>MinerU token 有效期 90 天，不支持续期；到期后重新创建并更新 Worker Secret 即可</li>
                     <li>CloudConvert 免费版: 25 次/天</li>
                     <li>单文件最大: 客户端 50MB / API 100MB</li>
                     <li>API Key 仅存在浏览器本地；配了 Worker 则由 Worker 持有密钥</li>

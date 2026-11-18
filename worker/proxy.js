@@ -13,9 +13,9 @@
  * 或者在 Cloudflare Dashboard → Workers & Pages → 新建 Worker，
  * 粘贴本文件，然后在 Settings → Variables 里加两个 Secret。
  *
- * 注意：MinerU token 有效期 14 天，过期后到
- * https://mineru.net/apiManage/token 重新生成并更新 Secret，
- * 不需要重新部署 Worker。
+ * 注意：MinerU token 有效期 90 天，到期后不支持续期，需要到
+ * https://mineru.net/apiManage/token 重新创建一个（最多 5 个），
+ * 然后更新这里的 MINERU_API_TOKEN Secret，不需要重新部署 Worker。
  */
 
 const CLOUDCONVERT_API = 'https://api.cloudconvert.com/v2';
