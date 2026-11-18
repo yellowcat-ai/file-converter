@@ -4,10 +4,11 @@
  * 和 worker/proxy.js 的路由完全一致，只是跑在你自己电脑上。
  *
  * 为什么需要它：Cloudflare 的 *.workers.dev 在国内经常被 DNS 污染 +
- * SNI 重置，页面里填 Worker 地址会直接连不通；而 mineru.net 服务端又
- * 不给浏览器开跨域（带 Origin 时预检返回 403 "Invalid CORS request"），
- * 所以纯前端也直连不了。本地代理这两个问题都没有：
- * mineru.net / 阿里云 OSS 在国内是可达的。
+ * SNI 重置，浏览器直连不上（挂了代理的浏览器能连，但读者不一定有代理）；
+ * 而 mineru.net 服务端又不给浏览器开跨域（带 Origin 时预检返回 403
+ * "Invalid CORS request"），所以纯前端也直连不了。本地代理这两个问题都
+ * 没有：mineru.net / 阿里云 OSS 在国内是可达的，实测 19 页 PDF 15 秒出
+ * 真 DOCX，和走 Worker 的结果字节一致。
  *
  * 用法（在项目根目录或 worker 目录都行）：
  *   node worker/local-proxy.mjs            # 默认 127.0.0.1:8788
