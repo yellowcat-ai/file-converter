@@ -106,19 +106,43 @@
                 </button>
             </div>
 
-            <!-- Cloudflare Worker Proxy -->
+            <!-- 转换代理（Cloudflare Worker 或本机 local-proxy） -->
             <div class="mb-6">
-                <label class="block text-sm font-medium mb-2">Cloudflare Worker 代理 <span class="text-xs text-gray-400">(PDF 高精度转换必需)</span></label>
+                <label class="block text-sm font-medium mb-2">转换代理 <span class="text-xs text-gray-400">(PDF 高精度转换必需)</span></label>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
                     配好代理后 PDF→DOCX/MD/HTML 才会走 MinerU 精准解析（版面和中文 OCR 明显更好），密钥也不会暴露在浏览器里。
                     <a href="#" onclick="showWorkerCode();return false" class="text-primary-500 underline">查看 Worker 代码</a>
                 </p>
-                <input type="url" id="proxyUrlInput" placeholder="https://your-worker.your-name.workers.dev"
+                <input type="url" id="proxyUrlInput" placeholder="http://127.0.0.1:8788 或 https://your-worker.your-name.workers.dev"
                     class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none">
                 <button onclick="saveProxyUrl()" class="mt-2 w-full py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-500 transition">
                     保存并检测代理
                 </button>
                 <p id="proxyHealth" class="mt-2 text-xs text-gray-500 dark:text-gray-400 hidden"></p>
+
+                <!-- 国内直连用不了 workers.dev，给出本机代理这条路 -->
+                <div class="mt-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
+                    <p class="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">国内网络推荐：本机代理（不需要翻墙）</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-300 mb-2">
+                        Cloudflare 的 <code>*.workers.dev</code> 域名在国内经常被解析到错误地址或重置连接。
+                        在自己电脑上跑一个只监听 127.0.0.1 的小代理就行 —— MinerU 和阿里云 OSS 国内都是通的。
+                    </p>
+                    <ol class="text-xs text-gray-600 dark:text-gray-300 space-y-1 list-decimal list-inside mb-2">
+                        <li>装好 Node 18+，下载 <a href="worker/local-proxy.mjs" download class="text-primary-500 underline">local-proxy.mjs</a>（零依赖，单文件）</li>
+                        <li>执行下面这条命令（密钥读取顺序：环境变量 → 同目录 <code>.env</code> → 本机 <code>~/.secrets-manager</code>，都不会写进前端）</li>
+                        <li>把监听地址填进上面输入框并保存，或者直接打开那个地址用本地版页面</li>
+                    </ol>
+                    <div class="flex items-center gap-2">
+                        <code id="localProxyCmd" class="flex-1 px-2 py-1.5 bg-gray-900 text-green-400 rounded text-xs font-mono overflow-x-auto whitespace-nowrap">node local-proxy.mjs</code>
+                        <button onclick="copyText(document.getElementById('localProxyCmd').textContent, '命令已复制')"
+                            class="px-2 py-1.5 bg-gray-200 dark:bg-gray-600 rounded text-xs hover:bg-gray-300 dark:hover:bg-gray-500 transition">复制</button>
+                        <button onclick="fillLocalProxy()" class="px-2 py-1.5 bg-primary-500 text-white rounded text-xs hover:bg-primary-600 transition">填入</button>
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        在线页面走 https，代理走 http://127.0.0.1 是允许的（浏览器把本机回环当安全来源）；
+                        若你的浏览器拦截，就直接打开 <a href="http://127.0.0.1:8788" target="_blank" class="text-primary-500 underline">http://127.0.0.1:8788</a> 用本地版，功能完全一样。
+                    </p>
+                </div>
             </div>
 
             <!-- Default Output Format -->
@@ -322,11 +346,11 @@
                 <h4 class="font-medium text-xs text-gray-500 uppercase tracking-wider mb-2">限制说明</h4>
                 <ul class="space-y-1 text-gray-600 dark:text-gray-400">
                     <li>客户端转换: 无限制，离线可用</li>
-                    <li>MinerU 精准解析: 需在 Worker 上配 token，免费 1000 页/天，单文件 ≤200 页</li>
-                    <li>MinerU token 有效期 90 天，不支持续期；到期后重新创建并更新 Worker Secret 即可</li>
+                    <li>MinerU 精准解析: 需配代理（Worker 或本机 local-proxy），免费额度内 200 页/文件</li>
+                    <li>MinerU token 有效期 90 天，不支持续期；到期后重新创建并更新代理的 Secret 即可</li>
                     <li>CloudConvert 免费版: 25 次/天</li>
                     <li>单文件最大: 客户端 50MB / API 100MB</li>
-                    <li>API Key 仅存在浏览器本地；配了 Worker 则由 Worker 持有密钥</li>
+                    <li>API Key 仅存在浏览器本地；配了代理则由代理持有密钥，前端看不到</li>
                 </ul>
             </div>
         </div>
@@ -368,6 +392,8 @@ const MINERU_OUTPUTS = ['md', 'docx', 'html', 'txt']; // MinerU 只能产出文�
 // （raw.githubusercontent.com 在国内经常连不通，别依赖它）。
 const WORKER_CODE_PATH = 'worker/proxy.js';
 const WORKER_CODE_FALLBACK = 'https://github.com/yellowcat-ai/file-converter/blob/main/worker/proxy.js';
+// 本机代理（worker/local-proxy.mjs）默认监听地址；国内直连 workers.dev 不通时的替代方案
+const LOCAL_PROXY_DEFAULT = 'http://127.0.0.1:8788';
 
 // MinerU 精准解析 API 的 token 放在 Worker 上，所以没配代理就用不了
 function mineruAvailable() {
@@ -1714,20 +1740,52 @@ async function checkProxyHealth() {
     }
     el.textContent = '正在检测代理...';
     el.classList.remove('hidden');
+    const isLocal = /^https?:\/\/(127\.0\.0\.1|localhost|::1)(:|\/|$)/.test(proxy);
+    // workers.dev 在国内经常直接卡住，不加超时的话这段文字会一直停在"正在检测"
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 6000);
     try {
-        const res = await fetch(`${proxy}/health`, { method: 'GET' });
+        const res = await fetch(`${proxy}/health`, { method: 'GET', signal: ctrl.signal });
+        clearTimeout(timer);
         if (!res.ok) {
-            el.textContent = `代理可访问，但 /health 返回 ${res.status}。若是旧版 Worker，重新粘贴最新代码部署即可。`;
+            el.textContent = `代理可访问，但 /health 返回 ${res.status}。老版本 Worker 没有这个路由，重新部署或重跑本地代理即可。`;
             return;
         }
         const data = await res.json();
         const parts = [];
         parts.push(data.cloudconvert ? 'CloudConvert ✓' : 'CloudConvert ✗ 未配密钥');
         parts.push(data.mineru ? 'MinerU ✓' : 'MinerU ✗ 未配 token');
-        el.textContent = '代理已连通：' + parts.join('，') +
+        const who = data.mode === 'local' || isLocal ? '本机代理' : '代理';
+        el.textContent = who + '已连通：' + parts.join('，') +
             (data.mineru ? '' : '（MinerU 用不了，PDF 会退回 CloudConvert）');
     } catch (e) {
-        el.textContent = '代理无法访问：' + e.message;
+        clearTimeout(timer);
+        const why = e.name === 'AbortError' ? '连接超时' : e.message;
+        let hint;
+        if (isLocal) {
+            hint = '本机代理没在跑？在它的目录执行 `node local-proxy.mjs`，启动后页面右上角会显示监听端口。';
+        } else if (/workers\.dev/.test(proxy)) {
+            hint = 'workers.dev 在国内经常被 DNS 解析到错误地址或被连接重置。这种情况建议改用下面的本机代理。';
+        } else {
+            hint = '检查地址有没有写错、代理服务是否在运行。';
+        }
+        el.textContent = `代理无法访问（${why}）。${hint}`;
+    }
+}
+
+// 设置面板里那个「填入」按钮：只填输入框并保存，不动用户的其它配置。
+function fillLocalProxy() {
+    const input = document.getElementById('proxyUrlInput');
+    input.value = LOCAL_PROXY_DEFAULT;
+    saveProxyUrl();
+}
+
+async function copyText(text, okMsg) {
+    try {
+        await navigator.clipboard.writeText(text);
+        showToast(okMsg || '已复制');
+    } catch {
+        showToast('浏览器不允许自动复制，请手动选中后复制');
     }
 }
 
